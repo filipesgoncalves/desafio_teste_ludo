@@ -344,6 +344,15 @@ describe('Movimento e vez', () => {
     expect(jogo.jogadores[0].pecas[0]).toBe(6);
   });
 
+  test('6 sem movimento também conta para os três 6 seguidos', () => {
+    const jogo = novaPartida();
+    jogo.definirPosicoes(0, [53, 54, 55, CHEGADA]);
+    expect(jogo.lancarDado(6)).toEqual({ valor: 6, movimentos: [], jogaDeNovo: true });
+    expect(jogo.lancarDado(6)).toEqual({ valor: 6, movimentos: [], jogaDeNovo: true });
+    expect(jogo.lancarDado(6)).toEqual({ valor: 6, movimentos: [], perdeuAVez: true });
+    expect(jogo.jogadorDaVez.nome).toBe('Bruno');
+  });
+
   test('a contagem de 6 seguidos recomeça quando a vez muda', () => {
     const jogo = novaPartida();
     jogo.lancarDado(6);
@@ -382,6 +391,15 @@ describe('Captura e casas seguras', () => {
     const r = jogo.mover(0);
     expect(r).toMatchObject({ casa: 12, capturou: 1 });
     expect(jogo.jogadores[1].pecas).toEqual([BASE, 30, BASE, BASE]);
+  });
+
+  test('capturar sem tirar 6 não dá jogada extra', () => {
+    const jogo = novaPartida();
+    jogo.definirPosicoes(0, [10, BASE, BASE, BASE]);
+    jogo.definirPosicoes(1, [progressoPara(jogo, 1, 12), BASE, BASE, BASE]);
+    jogo.lancarDado(2);
+    expect(jogo.mover(0).capturou).toBe(1);
+    expect(jogo.jogadorDaVez.nome).toBe('Bruno');
   });
 
   test('o amarelo também captura o vermelho', () => {
@@ -516,6 +534,14 @@ describe('Corredor final e chegada', () => {
     jogo.lancarDado(1); // Bruno passa
     jogo.lancarDado(2);
     expect(jogo.mover(0)).toMatchObject({ para: CHEGADA, chegou: true });
+  });
+
+  test('chegar ao centro sem tirar 6 não dá jogada extra', () => {
+    const jogo = novaPartida();
+    jogo.definirPosicoes(0, [54, 10, BASE, BASE]);
+    jogo.lancarDado(2);
+    expect(jogo.mover(0).chegou).toBe(true);
+    expect(jogo.jogadorDaVez.nome).toBe('Bruno');
   });
 
   test('peça que chegou ao centro não anda mais', () => {

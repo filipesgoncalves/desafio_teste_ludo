@@ -15,7 +15,8 @@ Casos de teste em JavaScript (Jest) que simulam uma partida de **Ludo** para 2 j
 - Só sai da base quem tira 6. A peça vai para a casa de saída da sua cor.
 - Quem tira 6 joga de novo. Três 6 seguidos fazem perder a vez (a terceira jogada não vale).
 - Sem movimento possível, a vez passa. Se o valor foi 6, o jogador lança de novo.
-- **Captura**: a peça que cai numa casa ocupada por peça adversária manda essa peça de volta para a base (todas, se houver mais de uma). Peças da mesma cor podem dividir a casa.
+- **Captura**: a peça que cai numa casa ocupada por uma peça adversária manda essa peça de volta para a base.
+- **Barreira**: duas peças da mesma cor na mesma casa formam uma barreira. O adversário não pode passar por ela nem parar nela, nem mesmo numa casa segura. Se a barreira estiver na casa de saída dele, ele não sai da base. As peças da própria cor passam normalmente, e a barreira se desfaz quando uma das peças sai.
 - **Casas seguras**: saídas e estrelas (0, 8, 13, 21, 26, 34, 39 e 47). Nelas ninguém é capturado.
 - **Corredor final**: depois de 51 passos na trilha, a peça entra no corredor da sua cor (5 casas), onde não pode ser capturada, e chega ao centro só com o valor exato.
 - Vence quem levar as 4 peças ao centro primeiro. Depois do fim, nenhuma jogada é aceita.
@@ -45,7 +46,8 @@ O arquivo tem três partes:
 | Dado | Valores de 1 a 6, todas as faces aparecem, não se lança de novo antes de mover, não se move sem lançar |
 | Saída da base | Sem 6 a vez passa, com 6 a peça vai para a saída (casa 0 ou 26), peça na base não anda com outro valor |
 | Movimento e vez | A peça anda o valor do dado, a vez passa sem 6, com 6 joga de novo, três 6 seguidos perdem a vez, a contagem recomeça na troca de vez, índice inválido, volta pela casa 51 |
-| Captura e casas seguras | Captura nos dois sentidos, duas peças capturadas de uma vez, nenhuma captura nas 7 casas seguras nem na saída, peças da mesma cor dividem a casa |
+| Captura e casas seguras | Captura nos dois sentidos, duas peças adversárias juntas não são capturadas, nenhuma captura nas 7 casas seguras nem na saída, peças da mesma cor dividem a casa |
+| Barreira | O adversário não passa nem para na barreira, pode parar antes dela, a barreira vale em casa segura e bloqueia a saída da base, a própria cor passa, a barreira se desfaz quando uma peça sai |
 | Corredor final e chegada | Entrada no corredor, peça no corredor não é capturada, chegada com valor exato, peça no centro não anda, 6 sem movimento lança de novo |
 | Vitória | 4 peças no centro vencem, 3 ainda não, nada é aceito depois do fim |
 | Partida simulada | Partidas sorteadas jogadas até o fim com uma estratégia simples, conferindo a cada lance as posições válidas e, no fim, o vencedor |

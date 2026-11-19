@@ -43,7 +43,7 @@ O arquivo tem três partes:
 | Grupo | O que verifica |
 |---|---|
 | Início da partida | 2 jogadores em lados opostos, 4 peças na base, vermelho começa, outro número de jogadores recusado |
-| Dado | Valores de 1 a 6, todas as faces aparecem, não se lança de novo antes de mover, não se move sem lançar |
+| Dado | Valores de 1 a 6, todas as faces aparecem, não se lança de novo antes de mover, não se move nem há movimentos possíveis sem lançar |
 | Saída da base | Sem 6 a vez passa, com 6 a peça vai para a saída (casa 0 ou 26), peça na base não anda com outro valor |
 | Movimento e vez | A peça anda o valor do dado, a vez passa sem 6, com 6 joga de novo, três 6 seguidos perdem a vez, a contagem recomeça na troca de vez, índice inválido, volta pela casa 51 |
 | Captura e casas seguras | Captura nos dois sentidos, duas peças adversárias juntas não são capturadas, nenhuma captura nas 7 casas seguras nem na saída, peças da mesma cor dividem a casa |
@@ -57,3 +57,4 @@ Cada teste monta a própria partida, lança o dado, move as peças e confere as 
 ## Colaborador
 
 - Filipe ([filipesgoncalves](https://github.com/filipesgoncalves))
+- Thiago ([Chizuli](https://github.com/Chizuli))

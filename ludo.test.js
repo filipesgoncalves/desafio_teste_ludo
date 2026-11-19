@@ -98,6 +98,7 @@ class Ludo {
 
   /** Índices das peças do jogador da vez que podem andar `valor` casas. */
   movimentosPossiveis(valor = this.dado) {
+    if (valor === null) return [];
     return this.jogadorDaVez.pecas
       .map((p, i) => ({ p, i }))
       .filter(({ p }) => {
@@ -263,6 +264,12 @@ describe('Dado', () => {
   test('não se move peça sem lançar o dado', () => {
     const jogo = novaPartida();
     expect(() => jogo.mover(0)).toThrow('Lance o dado antes de mover');
+  });
+
+  test('sem lançar o dado não há movimentos possíveis', () => {
+    const jogo = novaPartida();
+    jogo.definirPosicoes(0, [10, 20, BASE, BASE]);
+    expect(jogo.movimentosPossiveis()).toEqual([]);
   });
 });
 

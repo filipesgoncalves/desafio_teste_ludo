@@ -15,6 +15,9 @@
  *   - Sem movimento possível, a vez passa (se o valor foi 6, o jogador lança de novo).
  *   - Caiu numa casa ocupada por peça adversária, ela volta para a base,
  *     exceto nas casas seguras (saídas e estrelas: 0, 8, 13, 21, 26, 34, 39, 47).
+ *   - Duas peças da mesma cor na mesma casa formam uma barreira: o adversário
+ *     não pode passar por ela nem parar nela (nem sair da base, se ela estiver na saída dele).
+ *     As peças da própria cor passam normalmente.
  *   - Depois de dar a volta (51 passos na trilha), a peça entra no corredor da sua
  *     cor (5 casas, onde ninguém captura) e chega ao centro com o valor exato.
  *   - Vence quem levar as 4 peças ao centro primeiro.
@@ -77,14 +80,31 @@ class Ludo {
     return (this.jogadores[indiceJogador].saida + progresso) % CASAS_NA_TRILHA;
   }
 
+  /** Verdadeiro se o jogador tem 2 ou mais peças na casa absoluta indicada (barreira). */
+  temBarreira(indiceJogador, casa) {
+    const pecas = this.jogadores[indiceJogador].pecas;
+    return pecas.filter((p) => this.casaNaTrilha(indiceJogador, p) === casa).length >= 2;
+  }
+
+  /** Verdadeiro se o caminho de `de` até `para` passa ou para numa barreira adversária. */
+  _bloqueadoPorBarreira(de, para) {
+    const adversario = 1 - this.vez;
+    const inicio = de === BASE ? 0 : de + 1;
+    for (let passo = inicio; passo <= Math.min(para, ULTIMA_CASA_DA_TRILHA); passo++) {
+      if (this.temBarreira(adversario, this.casaNaTrilha(this.vez, passo))) return true;
+    }
+    return false;
+  }
+
   /** Índices das peças do jogador da vez que podem andar `valor` casas. */
   movimentosPossiveis(valor = this.dado) {
     return this.jogadorDaVez.pecas
       .map((p, i) => ({ p, i }))
       .filter(({ p }) => {
-        if (p === BASE) return valor === 6;
+        if (p === BASE) return valor === 6 && !this._bloqueadoPorBarreira(BASE, 0);
         if (p === CHEGADA) return false;
-        return p + valor <= CHEGADA;
+        if (p + valor > CHEGADA) return false;
+        return !this._bloqueadoPorBarreira(p, p + valor);
       })
       .map(({ i }) => i);
   }
@@ -368,14 +388,14 @@ describe('Captura e casas seguras', () => {
     expect(jogo.jogadores[0].pecas[0]).toBe(BASE);
   });
 
-  test('duas peças adversárias na mesma casa voltam as duas para a base', () => {
+  test('duas peças adversárias na mesma casa não são capturadas: formam barreira', () => {
     const jogo = novaPartida();
     const p = progressoPara(jogo, 1, 15);
     jogo.definirPosicoes(0, [10, BASE, BASE, BASE]);
     jogo.definirPosicoes(1, [p, p, BASE, BASE]);
-    jogo.lancarDado(5);
-    expect(jogo.mover(0).capturou).toBe(2);
-    expect(jogo.jogadores[1].pecas).toEqual([BASE, BASE, BASE, BASE]);
+    expect(jogo.temBarreira(1, 15)).toBe(true);
+    expect(jogo.lancarDado(5)).toEqual({ valor: 5, movimentos: [], passouAVez: true });
+    expect(jogo.jogadores[1].pecas).toEqual([p, p, BASE, BASE]);
   });
 
   test.each([8, 13, 21, 26, 34, 39, 47])('na casa segura %i ninguém é capturado', (casa) => {
@@ -401,6 +421,65 @@ describe('Captura e casas seguras', () => {
     jogo.lancarDado(2);
     jogo.mover(0);
     expect(jogo.jogadores[0].pecas).toEqual([12, 12, BASE, BASE]);
+  });
+});
+
+describe('Barreira', () => {
+  /** Amarelo com duas peças na casa 15; vermelho com uma peça na casa 10 e outra na 2. */
+  function partidaComBarreira() {
+    const jogo = novaPartida();
+    const p = progressoPara(jogo, 1, 15);
+    jogo.definirPosicoes(0, [10, 2, BASE, BASE]);
+    jogo.definirPosicoes(1, [p, p, BASE, BASE]);
+    return jogo;
+  }
+
+  test('o adversário não pode passar pela barreira', () => {
+    const jogo = partidaComBarreira();
+    expect(jogo.lancarDado(6).movimentos).not.toContain(0); // 10 + 6 = 16, passaria pela 15
+  });
+
+  test('o adversário não pode parar na barreira', () => {
+    const jogo = partidaComBarreira();
+    expect(jogo.lancarDado(5).movimentos).toEqual([1]); // a peça 0 pararia na 15; a peça 1 vai para a 7
+  });
+
+  test('o adversário pode parar antes da barreira', () => {
+    const jogo = partidaComBarreira();
+    jogo.lancarDado(4);
+    expect(jogo.mover(0)).toMatchObject({ casa: 14 });
+  });
+
+  test('a barreira também vale numa casa segura', () => {
+    const jogo = novaPartida();
+    const p = progressoPara(jogo, 1, 13);
+    jogo.definirPosicoes(0, [10, BASE, BASE, BASE]);
+    jogo.definirPosicoes(1, [p, p, BASE, BASE]);
+    expect(jogo.lancarDado(5)).toMatchObject({ movimentos: [], passouAVez: true });
+  });
+
+  test('a barreira na casa de saída impede o adversário de sair da base', () => {
+    const jogo = novaPartida();
+    const p = progressoPara(jogo, 1, 0);
+    jogo.definirPosicoes(1, [p, p, BASE, BASE]);
+    expect(jogo.lancarDado(6)).toEqual({ valor: 6, movimentos: [], jogaDeNovo: true });
+  });
+
+  test('as peças da própria cor passam pela própria barreira', () => {
+    const jogo = novaPartida();
+    jogo.definirPosicoes(0, [10, 12, 12, BASE]);
+    jogo.lancarDado(4);
+    expect(jogo.mover(0)).toMatchObject({ casa: 14 });
+  });
+
+  test('quando uma das peças sai, a barreira se desfaz e a passagem é liberada', () => {
+    const jogo = partidaComBarreira();
+    jogo.lancarDado(1);
+    jogo.mover(1); // Ana: peça 1 vai para a casa 3
+    jogo.lancarDado(2);
+    jogo.mover(0); // Bruno: uma peça sai da casa 15
+    expect(jogo.temBarreira(1, 15)).toBe(false);
+    expect(jogo.lancarDado(6).movimentos).toContain(0);
   });
 });
 
